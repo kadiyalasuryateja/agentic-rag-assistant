@@ -10,6 +10,13 @@ that pauses the thread until a reviewer approves, edits or rejects the draft.
 ![LangGraph](https://img.shields.io/badge/LangGraph-multi--agent-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+## Try it
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kadiyalasuryateja/agentic-rag-assistant)
+
+The service includes a small web chat UI at `/` (with example questions, the agent trace, and
+approve/edit/reject buttons for the human-review step) and Swagger docs at `/docs`.
+
 ## Features
 
 - **Multi-agent workflow (LangGraph):** guard → planner → supervisor ⇄ {retriever, executor} → writer → reviewer
@@ -90,7 +97,7 @@ status=answered grounding=0.917
 uvicorn agentic_rag.api:app --reload        # or: docker compose up --build
 ```
 
-Open http://localhost:8000/docs for the interactive Swagger UI.
+Open http://localhost:8000 for the chat UI, or http://localhost:8000/docs for the Swagger UI.
 
 ```bash
 # Ask a question

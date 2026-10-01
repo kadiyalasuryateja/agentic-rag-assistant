@@ -6,10 +6,12 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .assistant import Assistant
@@ -52,9 +54,18 @@ def _assistant() -> Assistant:
     return state["assistant"]
 
 
+INDEX_HTML = Path(__file__).with_name("static") / "index.html"
+
+
+@app.get("/", include_in_schema=False)
+def index():
+    return FileResponse(INDEX_HTML)
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "chunks": _assistant().kb.count()}
+    a = _assistant()
+    return {"status": "ok", "chunks": a.kb.count(), "mode": "openai" if a.settings.openai_api_key else "offline"}
 
 
 @app.post("/ingest")

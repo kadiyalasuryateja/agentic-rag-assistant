@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: agentic-rag-assistant
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false   # optional: set in the Render dashboard to use GPT-4o-mini

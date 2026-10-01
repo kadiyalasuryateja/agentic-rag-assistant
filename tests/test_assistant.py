@@ -103,7 +103,10 @@ def test_api_end_to_end(assistant, monkeypatch):
 
     monkeypatch.setattr(api, "Assistant", lambda: assistant)
     with TestClient(api.app) as client:
-        assert client.get("/health").json()["chunks"] > 0
+        health = client.get("/health").json()
+        assert health["chunks"] > 0 and health["mode"] == "offline"
+        page = client.get("/")
+        assert page.status_code == 200 and "Agentic RAG Assistant" in page.text
         r = client.post("/ingest", json={"source": "faq.md", "text": "The office parking garage opens at 6 AM."})
         assert r.json()["chunks_added"] == 1
         r = client.post("/chat", json={"question": "When does the parking garage open?"})
