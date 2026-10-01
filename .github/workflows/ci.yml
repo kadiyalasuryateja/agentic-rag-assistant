@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.10", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,7 +19,11 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - run: ruff check src tests eval
-      - run: pytest -q
+      - name: Tests (core install, built-in vector store)
+        run: pytest -q
+      - run: pip install -e ".[chroma]"
+      - name: Tests (with Chroma)
+        run: pytest -q
       - name: Offline evaluation
         run: python eval/run_eval.py --docs data/docs
 
