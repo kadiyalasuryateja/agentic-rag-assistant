@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 
 from .assistant import Assistant
 
@@ -16,7 +17,17 @@ def main() -> None:
     ask = sub.add_parser("ask", help="ask a question")
     ask.add_argument("question")
     ask.add_argument("--trace", action="store_true", help="print the agent trace")
+    srv = sub.add_parser("serve", help="start the web app and API")
+    srv.add_argument("--host", default="127.0.0.1")
+    srv.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")))
     args = p.parse_args()
+
+    if args.cmd == "serve":
+        import uvicorn
+
+        print(f"Open http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}")
+        uvicorn.run("agentic_rag.api:app", host=args.host, port=args.port)
+        return
 
     assistant = Assistant()
     if args.cmd == "ingest":

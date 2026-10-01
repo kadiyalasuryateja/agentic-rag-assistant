@@ -19,12 +19,13 @@ from .assistant import Assistant
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("agentic_rag.api")
 state: dict[str, Assistant] = {}
+SAMPLE_DOCS = Path(__file__).with_name("sample_docs")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     assistant = Assistant()
-    seed = os.getenv("RAG_SEED_DIR", "data/docs")
+    seed = assistant.settings.seed_dir or str(SAMPLE_DOCS)
     if assistant.kb.count() == 0 and os.path.isdir(seed):
         n = assistant.kb.add_directory(seed)
         log.info("seeded knowledge base with %d chunks from %s", n, seed)

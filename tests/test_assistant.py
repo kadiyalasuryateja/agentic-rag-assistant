@@ -1,7 +1,6 @@
 import uuid
 from pathlib import Path
 
-import chromadb
 import pytest
 from fastapi.testclient import TestClient
 
@@ -15,10 +14,19 @@ from agentic_rag.tools import ToolError, run_tool
 DOCS = Path(__file__).resolve().parents[1] / "data" / "docs"
 
 
+def _client():
+    try:
+        import chromadb
+
+        return chromadb.EphemeralClient()
+    except ImportError:
+        return None
+
+
 @pytest.fixture
 def assistant(tmp_path):
     settings = Settings(chroma_path=str(tmp_path), collection=f"test_{uuid.uuid4().hex[:8]}", openai_api_key=None)
-    kb = KnowledgeBase(settings, HashingEmbedder(), client=chromadb.EphemeralClient())
+    kb = KnowledgeBase(settings, HashingEmbedder(), client=_client())
     kb.add_directory(DOCS)
     return Assistant(settings=settings, llm=OfflineLLM(), kb=kb)
 
@@ -117,3 +125,12 @@ def test_api_end_to_end(assistant, monkeypatch):
         r2 = client.post(f"/threads/{r['thread_id']}/resume", json={"action": "reject"})
         assert r2.json()["status"] == "rejected"
         assert client.post(f"/threads/{r['thread_id']}/resume", json={"action": "approve"}).status_code == 409
+
+
+def test_local_vector_store_persists(tmp_path):
+    settings = Settings(chroma_path=str(tmp_path), collection="kb", vector_store="local")
+    kb = KnowledgeBase(settings, HashingEmbedder())
+    kb.add_directory(DOCS)
+    reopened = KnowledgeBase(settings, HashingEmbedder())
+    assert reopened.count() == kb.count() > 0
+    assert reopened.hybrid_search("vpn sessions disconnect")[0].source == "it_support.md"

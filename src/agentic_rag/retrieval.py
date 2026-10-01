@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import logging
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
-import chromadb
 from rank_bm25 import BM25Okapi
 
 from .config import Settings
@@ -42,12 +45,81 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
     return chunks
 
 
+log = logging.getLogger(__name__)
+
+
+class LocalVectorStore:
+    """Dependency-free cosine-similarity store with the subset of the Chroma collection API we use.
+
+    Used when ``chromadb`` is not installed (or ``RAG_VECTOR_STORE=local``); persists to a JSON file.
+    Fine for thousands of chunks; use Chroma for anything larger.
+    """
+
+    def __init__(self, path: str | Path | None = None):
+        self.path = Path(path) if path else None
+        self.rows: dict[str, dict[str, Any]] = {}
+        if self.path and self.path.exists():
+            self.rows = json.loads(self.path.read_text(encoding="utf-8"))
+
+    def _save(self) -> None:
+        if self.path:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.write_text(json.dumps(self.rows), encoding="utf-8")
+
+    def count(self) -> int:
+        return len(self.rows)
+
+    def upsert(self, ids, documents, embeddings, metadatas) -> None:
+        for i, d, e, m in zip(ids, documents, embeddings, metadatas, strict=True):
+            self.rows[i] = {"document": d, "embedding": list(e), "metadata": m}
+        self._save()
+
+    def get(self, include=None) -> dict:
+        return {
+            "ids": list(self.rows),
+            "documents": [r["document"] for r in self.rows.values()],
+            "metadatas": [r["metadata"] for r in self.rows.values()],
+        }
+
+    def query(self, query_embeddings, n_results: int) -> dict:
+        q = query_embeddings[0]
+        qn = math.sqrt(sum(x * x for x in q)) or 1.0
+        scored = []
+        for i, r in self.rows.items():
+            e = r["embedding"]
+            en = math.sqrt(sum(x * x for x in e)) or 1.0
+            sim = sum(a * b for a, b in zip(q, e, strict=False)) / (qn * en)
+            scored.append((1 - sim, i, r))
+        scored.sort(key=lambda t: t[0])
+        top = scored[:n_results]
+        return {
+            "ids": [[i for _, i, _ in top]],
+            "documents": [[r["document"] for _, _, r in top]],
+            "metadatas": [[r["metadata"] for _, _, r in top]],
+            "distances": [[d for d, _, _ in top]],
+        }
+
+
+def open_collection(settings: Settings, client: Any = None):
+    """Return a Chroma collection when available, else the local JSON-backed store."""
+    if settings.vector_store != "local":
+        try:
+            import chromadb
+
+            client = client or chromadb.PersistentClient(path=settings.chroma_path)
+            return client.get_or_create_collection(settings.collection, metadata={"hnsw:space": "cosine"})
+        except ImportError:
+            if settings.vector_store == "chroma":
+                raise
+            log.info("chromadb not installed; using the built-in local vector store")
+    return LocalVectorStore(Path(settings.chroma_path) / f"{settings.collection}.json")
+
+
 class KnowledgeBase:
-    def __init__(self, settings: Settings, embedder: Embedder, client: chromadb.ClientAPI | None = None):
+    def __init__(self, settings: Settings, embedder: Embedder, client: Any = None):
         self.settings = settings
         self.embedder = embedder
-        self.client = client or chromadb.PersistentClient(path=settings.chroma_path)
-        self.col = self.client.get_or_create_collection(settings.collection, metadata={"hnsw:space": "cosine"})
+        self.col = open_collection(settings, client)
         self._bm25: BM25Okapi | None = None
         self._corpus: list[Chunk] = []
         self._refresh_bm25()

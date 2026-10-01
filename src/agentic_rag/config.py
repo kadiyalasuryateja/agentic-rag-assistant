@@ -13,9 +13,13 @@ class Settings(BaseSettings):
     chat_model: str = "gpt-4o-mini"
     embedding_model: str = "text-embedding-3-small"
 
-    # Vector store
+    # Vector store: "auto" uses Chroma if installed, else the built-in local store
+    vector_store: str = "auto"
     chroma_path: str = ".chroma"
     collection: str = "knowledge_base"
+
+    # Folder of .md/.txt files indexed on API startup when the knowledge base is empty
+    seed_dir: str | None = None
 
     # Chunking
     chunk_size: int = 400

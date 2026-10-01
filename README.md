@@ -20,7 +20,7 @@ approve/edit/reject buttons for the human-review step) and Swagger docs at `/doc
 ## Features
 
 - **Multi-agent workflow (LangGraph):** guard → planner → supervisor ⇄ {retriever, executor} → writer → reviewer
-- **Hybrid retrieval:** Chroma dense vectors + BM25 keyword search, fused with Reciprocal Rank Fusion, then re-ranked
+- **Hybrid retrieval:** Chroma (or a built-in fallback store) dense vectors + BM25 keyword search, fused with Reciprocal Rank Fusion, then re-ranked
 - **Query rewriting** before every search, and wider search (`k × attempt`) on retry
 - **Pydantic-validated function calling:** the planner's JSON plan and every tool input are schema-validated; failed tool calls are repaired by the LLM and retried
 - **Guardrails:** prompt-injection detection, PII redaction (SSN, card numbers, emails), length limits, grounding check on every answer
@@ -63,16 +63,44 @@ flowchart LR
 
 ## Quickstart
 
+Requires **Python 3.10 or newer** (`python --version`). No API key or database needed.
+
+**macOS / Linux**
+
 ```bash
 git clone https://github.com/kadiyalasuryateja/agentic-rag-assistant.git
 cd agentic-rag-assistant
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+python -m agentic_rag serve
+```
 
-cp .env.example .env            # optional: add OPENAI_API_KEY for GPT-4o-mini + OpenAI embeddings
+**Windows (PowerShell)**
 
-agentic-rag ingest data/docs
-agentic-rag ask "How many unused PTO days carry over, and what is 1.5 * 12?" --trace
+```powershell
+git clone https://github.com/kadiyalasuryateja/agentic-rag-assistant.git
+cd agentic-rag-assistant
+py -m venv .venv
+.venv\Scripts\Activate.ps1      # if blocked: Set-ExecutionPolicy -Scope Process Bypass
+pip install -e .
+python -m agentic_rag serve
+```
+
+Then open **http://localhost:8000**. The sample HR/IT/engineering docs are indexed automatically.
+
+Optional extras:
+
+```bash
+pip install -e ".[chroma]"   # use ChromaDB instead of the built-in vector store
+pip install -e ".[openai]"   # then set OPENAI_API_KEY (see .env.example) for GPT-4o-mini + OpenAI embeddings
+pip install -e ".[dev]"      # pytest, ruff
+```
+
+From the command line:
+
+```bash
+python -m agentic_rag ask "How many unused PTO days carry over, and what is 1.5 * 12?" --trace
 ```
 
 ```text
@@ -94,7 +122,7 @@ status=answered grounding=0.917
 ### Run the API
 
 ```bash
-uvicorn agentic_rag.api:app --reload        # or: docker compose up --build
+python -m agentic_rag serve                 # or: docker compose up --build
 ```
 
 Open http://localhost:8000 for the chat UI, or http://localhost:8000/docs for the Swagger UI.
@@ -154,6 +182,8 @@ All settings use the `RAG_` prefix (see `config.py`):
 | `OPENAI_API_KEY` | – | Enables OpenAI chat + embeddings; offline mode when unset |
 | `RAG_CHAT_MODEL` | `gpt-4o-mini` | Chat model |
 | `RAG_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
+| `RAG_VECTOR_STORE` | `auto` | `chroma`, `local`, or `auto` (Chroma if installed) |
+| `RAG_SEED_DIR` | bundled samples | Folder indexed on startup when the store is empty |
 | `RAG_TOP_K` | `4` | Chunks passed to the writer |
 | `RAG_CHUNK_SIZE` / `RAG_CHUNK_OVERLAP` | `400` / `60` | Chunking |
 | `RAG_MIN_GROUNDING_SCORE` | `0.35` | Reviewer threshold |

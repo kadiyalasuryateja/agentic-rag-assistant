@@ -13,8 +13,6 @@ license = { text = "MIT" }
 dependencies = [
   "langgraph>=0.2.60",
   "langchain-core>=0.3",
-  "langchain-openai>=0.2",
-  "chromadb>=0.5",
   "rank-bm25>=0.2.2",
   "pydantic>=2.6",
   "pydantic-settings>=2.2",
@@ -23,6 +21,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+chroma = ["chromadb>=0.5"]
+openai = ["langchain-openai>=0.2"]
+all = ["chromadb>=0.5", "langchain-openai>=0.2"]
 dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.5"]
 eval = ["ragas>=0.2", "datasets>=2.19"]
 
@@ -33,7 +34,7 @@ agentic-rag = "agentic_rag.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-agentic_rag = ["static/*.html"]
+agentic_rag = ["static/*.html", "sample_docs/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
