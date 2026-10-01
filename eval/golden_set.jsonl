@@ -1,0 +1,10 @@
+{"question": "How many days of paid time off do full-time employees get per year?", "ground_truth": "18 days per year (1.5 days per month).", "source": "hr_policies.md"}
+{"question": "How many unused PTO days can be carried over?", "ground_truth": "Up to 5 unused days.", "source": "hr_policies.md"}
+{"question": "How many days per week can employees work remotely?", "ground_truth": "Up to 3 days per week.", "source": "hr_policies.md"}
+{"question": "What is the annual learning budget?", "ground_truth": "1,200 USD per employee per year.", "source": "hr_policies.md"}
+{"question": "How often are laptops refreshed?", "ground_truth": "Every 36 months.", "source": "it_support.md"}
+{"question": "What happens after 5 failed login attempts?", "ground_truth": "The account is locked for 15 minutes.", "source": "it_support.md"}
+{"question": "When do VPN sessions disconnect?", "ground_truth": "Automatically after 12 hours.", "source": "it_support.md"}
+{"question": "When are production deployments frozen?", "ground_truth": "On Fridays after 2 PM and during company holidays.", "source": "engineering_runbook.md"}
+{"question": "When is a postmortem due after a Severity 1 incident?", "ground_truth": "Within 5 business days.", "source": "engineering_runbook.md"}
+{"question": "How large can a pull request be before it should be split?", "ground_truth": "Pull requests over 400 changed lines should be split.", "source": "engineering_runbook.md"}

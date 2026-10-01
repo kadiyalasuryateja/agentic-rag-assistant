@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-rag-assistant"
+version = "1.0.0"
+description = "Multi-agent RAG assistant built with LangGraph: hybrid retrieval, guardrails, human-in-the-loop review, and evaluation."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Surya Teja Kadiyala" }]
+license = { text = "MIT" }
+dependencies = [
+  "langgraph>=0.2.60",
+  "langchain-core>=0.3",
+  "langchain-openai>=0.2",
+  "chromadb>=0.5",
+  "rank-bm25>=0.2.2",
+  "pydantic>=2.6",
+  "pydantic-settings>=2.2",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.5"]
+eval = ["ragas>=0.2", "datasets>=2.19"]
+
+[project.scripts]
+agentic-rag = "agentic_rag.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
